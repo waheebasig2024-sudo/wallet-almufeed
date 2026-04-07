@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "c4IJ3b7GZmXODvBkJNBVZ"
+uri = "file://wallet-almufeed.zip"
+type = "unspecified"
+title = "wallet-almufeed - الكود المصدري الكامل"
