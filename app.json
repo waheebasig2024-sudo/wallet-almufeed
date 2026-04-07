@@ -6,8 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wallet-app",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
@@ -16,15 +16,23 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "يستخدم التطبيق بصمة الوجه أو البصمة للتحقق من هويتك"
+        "NSFaceIDUsageDescription": "يستخدم التطبيق بصمة الوجه للتحقق من هويتك"
       }
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#0a1628"
+      },
+      "minSdkVersion": 21,
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -39,11 +47,18 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-local-authentication"
+      "expo-local-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1a6ef5",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }
