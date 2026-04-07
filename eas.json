@@ -1,19 +1,15 @@
+
+cat > eas.json <<  EOF 
 {
   "cli": {
-    "version": ">= 12.0.0",
-    "requireCommit": false
+    "version": ">= 3.0.0"
   },
   "build": {
-    "preview": {
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      }
-    },
-    "production": {
-      "android": {
-        "buildType": "app-bundle"
+    "android": {
+      "release": {
+        "workflow": "generic"
       }
     }
   }
 }
+EOF
