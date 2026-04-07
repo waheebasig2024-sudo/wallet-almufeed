@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,42 +8,42 @@ import {
   Platform,
   BackHandler,
   Alert,
-} from "react-native";
-import * as LocalAuthentication from "expo-local-authentication";
-import NetInfo from "@react-native-community/netinfo";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+  StatusBar,
+} from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
+import NetInfo from '@react-native-community/netinfo';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useColors } from '@/hooks/useColors';
+import { useSettings } from '@/hooks/useSettings';
+import { SettingsDrawer } from '@/components/SettingsDrawer';
+import t from '@/constants/i18n';
 
-const WALLET_URL = "https://almufeed-net.infinityfreeapp.com/wallet/index.php";
+const WALLET_URL = 'https://almufeed-net.infinityfreeapp.com/wallet/index.php';
 
 function WebContent() {
-  if (Platform.OS === "web") {
+  if (Platform.OS === 'web') {
     return (
       <iframe
         src={WALLET_URL}
-        style={{ flex: 1, width: "100%", height: "100%", border: "none" } as React.CSSProperties}
+        style={{ flex: 1, width: '100%', height: '100%', border: 'none' } as React.CSSProperties}
         title="Wallet"
       />
     );
   }
-  const { WebView } = require("react-native-webview");
+  const { WebView } = require('react-native-webview');
   const webViewRef = useRef<InstanceType<typeof WebView>>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (Platform.OS === "android") {
-      const handler = BackHandler.addEventListener("hardwareBackPress", () => {
+    if (Platform.OS === 'android') {
+      const handler = BackHandler.addEventListener('hardwareBackPress', () => {
         if (canGoBack && webViewRef.current) {
           webViewRef.current.goBack();
           return true;
         }
-        Alert.alert("إغلاق التطبيق", "هل تريد الخروج من التطبيق؟", [
-          { text: "إلغاء", style: "cancel" },
-          { text: "خروج", style: "destructive", onPress: () => BackHandler.exitApp() },
-        ]);
-        return true;
+        return false;
       });
       return () => handler.remove();
     }
@@ -60,17 +60,15 @@ function WebContent() {
         ref={webViewRef}
         source={{ uri: WALLET_URL }}
         style={{ flex: 1 }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
+        javaScriptEnabled
+        domStorageEnabled
         onLoadStart={() => setIsLoading(true)}
         onLoadEnd={() => setIsLoading(false)}
-        onNavigationStateChange={(navState: { canGoBack: boolean }) => {
-          setCanGoBack(navState.canGoBack);
-        }}
+        onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
         onError={() => setIsLoading(false)}
-        allowsBackForwardNavigationGestures={true}
-        sharedCookiesEnabled={true}
-        thirdPartyCookiesEnabled={true}
+        allowsBackForwardNavigationGestures
+        sharedCookiesEnabled
+        thirdPartyCookiesEnabled
         mixedContentMode="always"
       />
     </View>
@@ -80,15 +78,18 @@ function WebContent() {
 export default function WalletScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { biometricsEnabled, language } = useSettings();
+  const tr = t[language];
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const authenticate = useCallback(async () => {
     setAuthError(null);
 
-    if (Platform.OS === "web") {
+    if (Platform.OS === 'web' || !biometricsEnabled) {
       setIsAuthenticated(true);
       return;
     }
@@ -103,87 +104,98 @@ export default function WalletScreen() {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "تأكيد الهوية للدخول إلى المحفظة",
-        fallbackLabel: "استخدم رمز المرور",
-        cancelLabel: "إلغاء",
+        promptMessage: tr.authDesc,
+        fallbackLabel: 'رمز المرور',
+        cancelLabel: tr.cancel,
         disableDeviceFallback: false,
       });
 
       if (result.success) {
         setIsAuthenticated(true);
-      } else {
-        if (result.error !== "user_cancel") {
-          setAuthError("فشل التحقق. يرجى المحاولة مرة أخرى.");
-        }
+      } else if (result.error !== 'user_cancel') {
+        setAuthError(tr.authError);
       }
     } catch {
-      setAuthError("حدث خطأ أثناء التحقق. يرجى المحاولة مرة أخرى.");
+      setAuthError(tr.authError);
     }
-  }, []);
+  }, [biometricsEnabled, language]);
 
   useEffect(() => {
     authenticate();
   }, [authenticate]);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
+    const unsub = NetInfo.addEventListener((state) => {
       setIsConnected(state.isConnected ?? false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  const topPadding = Platform.OS === "web" ? insets.top + 67 : insets.top;
+  useEffect(() => {
+    if (Platform.OS === 'android' && isAuthenticated) {
+      const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (drawerOpen) { setDrawerOpen(false); return true; }
+        Alert.alert(tr.closeApp, tr.closeAppMsg, [
+          { text: tr.cancel, style: 'cancel' },
+          { text: tr.exit, style: 'destructive', onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      });
+      return () => handler.remove();
+    }
+  }, [isAuthenticated, drawerOpen, language]);
+
+  const topPadding = Platform.OS === 'web'
+    ? insets.top + 67
+    : insets.top;
 
   if (!isAuthenticated) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background, paddingTop: topPadding }]}>
-        <View style={[styles.authCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.primary + "22" }]}>
-            <MaterialCommunityIcons name="fingerprint" size={40} color={colors.primary} />
+      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: topPadding }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primary + '1a' }]}>
+            <MaterialCommunityIcons name="fingerprint" size={44} color={colors.primary} />
           </View>
-          <Text style={[styles.authTitle, { color: colors.foreground }]}>
-            المحفظة الإلكترونية
-          </Text>
-          <Text style={[styles.authSubtitle, { color: colors.mutedForeground }]}>
-            {authError || "يرجى التحقق من هويتك للمتابعة"}
+          <Text style={[styles.authTitle, { color: colors.foreground }]}>{tr.authTitle}</Text>
+          <Text style={[styles.authDesc, { color: authError ? '#ef4444' : colors.mutedForeground }]}>
+            {authError || tr.authDesc}
           </Text>
           <TouchableOpacity
-            style={[styles.authButton, { backgroundColor: colors.primary }]}
+            style={[styles.authBtn, { backgroundColor: colors.primary }]}
             onPress={authenticate}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="fingerprint" size={20} color={colors.primaryForeground} />
-            <Text style={[styles.authButtonText, { color: colors.primaryForeground }]}>
-              {authError ? "إعادة المحاولة" : "التحقق بالبصمة"}
-            </Text>
+            <MaterialCommunityIcons name="fingerprint" size={20} color="#fff" />
+            <Text style={styles.authBtnText}>{authError ? tr.authRetry : tr.authButton}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setDrawerOpen(true)} style={styles.settingsLink}>
+            <Feather name="settings" size={14} color={colors.mutedForeground} />
+            <Text style={[styles.settingsLinkText, { color: colors.mutedForeground }]}>{tr.settings}</Text>
           </TouchableOpacity>
         </View>
+        <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       </View>
     );
   }
 
   if (isConnected === false) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background, paddingTop: topPadding }]}>
-        <View style={[styles.authCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.iconCircle, { backgroundColor: "#ef444422" }]}>
-            <Feather name="wifi-off" size={36} color="#ef4444" />
+      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: topPadding }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.iconCircle, { backgroundColor: '#ef444418' }]}>
+            <Feather name="wifi-off" size={40} color="#ef4444" />
           </View>
-          <Text style={[styles.authTitle, { color: colors.foreground }]}>
-            عذراً، لا يوجد اتصال بالإنترنت
-          </Text>
-          <Text style={[styles.authSubtitle, { color: colors.mutedForeground }]}>
-            يرجى التحقق من الشبكة وإعادة المحاولة
-          </Text>
+          <Text style={[styles.authTitle, { color: colors.foreground }]}>{tr.noInternet}</Text>
+          <Text style={[styles.authDesc, { color: colors.mutedForeground }]}>{tr.noInternetDesc}</Text>
           <TouchableOpacity
-            style={[styles.authButton, { backgroundColor: colors.primary }]}
-            onPress={() => NetInfo.fetch().then((state) => setIsConnected(state.isConnected ?? false))}
+            style={[styles.authBtn, { backgroundColor: colors.primary }]}
+            onPress={() => NetInfo.fetch().then((s) => setIsConnected(s.isConnected ?? false))}
             activeOpacity={0.8}
           >
-            <Feather name="refresh-cw" size={18} color={colors.primaryForeground} />
-            <Text style={[styles.authButtonText, { color: colors.primaryForeground }]}>
-              إعادة المحاولة
-            </Text>
+            <Feather name="refresh-cw" size={18} color="#fff" />
+            <Text style={styles.authBtnText}>{tr.retry}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -192,81 +204,84 @@ export default function WalletScreen() {
 
   if (isConnected === null) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
+  const headerTop = Platform.OS === 'web' ? insets.top + 67 : insets.top;
+
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === "web" ? topPadding : 0 }]}>
+    <View style={[styles.container, { backgroundColor: '#0a1628' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a1628" />
+
+      <View style={[styles.appHeader, { paddingTop: headerTop, backgroundColor: '#0a1628' }]}>
+        <TouchableOpacity
+          onPress={() => setDrawerOpen(true)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.menuBtn}
+        >
+          <Feather name="menu" size={22} color="#d4a843" />
+        </TouchableOpacity>
+        <Text style={styles.appHeaderTitle} numberOfLines={1}>{tr.appName}</Text>
+        <View style={{ width: 38 }} />
+      </View>
+
       <WebContent />
+
+      <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f0f4ff",
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  authCard: {
-    width: "100%",
+  container: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  card: {
+    width: '100%',
     maxWidth: 360,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 32,
-    alignItems: "center",
-    gap: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    alignItems: 'center',
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowRadius: 20,
+    elevation: 6,
   },
   iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
-  authTitle: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    textAlign: "center",
-    lineHeight: 30,
-  },
-  authSubtitle: {
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  authButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  authTitle: { fontSize: 21, fontFamily: 'Inter_700Bold', textAlign: 'center' },
+  authDesc: { fontSize: 14, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 21 },
+  authBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     paddingVertical: 14,
-    paddingHorizontal: 28,
+    paddingHorizontal: 30,
     borderRadius: 14,
-    marginTop: 8,
+    marginTop: 6,
   },
-  authButtonText: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
+  authBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#fff' },
+  settingsLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, opacity: 0.7 },
+  settingsLinkText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  appHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 12,
   },
-  loadingOverlay: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f0f4ff",
-    zIndex: 10,
-  },
+  menuBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  appHeaderTitle: { flex: 1, color: '#ffffff', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center' },
+  loadingOverlay: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4ff', zIndex: 10 },
 });
