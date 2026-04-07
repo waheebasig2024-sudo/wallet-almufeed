@@ -1,15 +1,21 @@
-
-cat > eas.json <<  EOF 
 {
   "cli": {
     "version": ">= 3.0.0"
   },
   "build": {
-    "android": {
-      "release": {
-        "workflow": "generic"
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal"
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
-EOF
