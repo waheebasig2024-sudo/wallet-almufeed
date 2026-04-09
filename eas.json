@@ -9,10 +9,7 @@
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       },
       "android": {
-        "buildType": "apk",
-        "gradleProperties": {
-          "newArchEnabled": "true"
-        }
+        "buildType": "apk"
       },
       "distribution": "internal"
     },
@@ -21,10 +18,7 @@
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       },
       "android": {
-        "buildType": "apk",
-        "gradleProperties": {
-          "newArchEnabled": "true"
-        }
+        "buildType": "apk"
       }
     }
   },
