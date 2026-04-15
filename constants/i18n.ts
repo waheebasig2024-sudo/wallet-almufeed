@@ -31,8 +31,6 @@ const t = {
     notificationsOff: 'الإشعارات معطّلة',
     security: 'الأمان',
     deviceLocked: 'هذا التطبيق مرتبط بجهازك',
-    openInBrowser: 'فتح المحفظة في المتصفح',
-    webNotice: 'للاستخدام الكامل، افتح الرابط في نافذة جديدة أو استخدم تطبيق الأندرويد.',
   },
   en: {
     appName: 'Al-Hassan Personal Assistant',
@@ -64,8 +62,6 @@ const t = {
     notificationsOff: 'Notifications disabled',
     security: 'Security',
     deviceLocked: 'This app is locked to your device',
-    openInBrowser: 'Open Wallet in Browser',
-    webNotice: 'For the full experience, open the link in a new tab or use the Android app.',
   },
 };
 
