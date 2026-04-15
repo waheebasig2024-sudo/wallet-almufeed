@@ -31,6 +31,12 @@ const t = {
     notificationsOff: 'الإشعارات معطّلة',
     security: 'الأمان',
     deviceLocked: 'هذا التطبيق مرتبط بجهازك',
+    serverUrl: 'عنوان الخادم',
+    serverUrlDesc: 'رابط خادم المساعد الذكي',
+    serverUrlPlaceholder: 'https://example.com أو http://192.168.1.x:8081',
+    serverUrlSave: 'حفظ',
+    serverUrlSaved: 'تم الحفظ ✓',
+    reload: 'إعادة تحميل',
   },
   en: {
     appName: 'Al-Hassan Personal Assistant',
@@ -62,6 +68,12 @@ const t = {
     notificationsOff: 'Notifications disabled',
     security: 'Security',
     deviceLocked: 'This app is locked to your device',
+    serverUrl: 'Server URL',
+    serverUrlDesc: 'AI assistant server address',
+    serverUrlPlaceholder: 'https://example.com or http://192.168.1.x:8081',
+    serverUrlSave: 'Save',
+    serverUrlSaved: 'Saved ✓',
+    reload: 'Reload',
   },
 };
 

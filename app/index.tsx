@@ -20,7 +20,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import t from '@/constants/i18n';
 
-const ASSISTANT_URL = 'http://127.0.0.1:8081';
+const DEFAULT_URL = 'http://127.0.0.1:8081';
 
 function getAndroidPermissions(): string[] {
   if (Platform.OS !== 'android' || !PermissionsAndroid.PERMISSIONS) return [];
@@ -122,11 +122,13 @@ function handleBridgeMessage(webViewRef: React.MutableRefObject<unknown>, raw: s
   } catch (_) {}
 }
 
-function WebContent() {
+function WebContent({ serverUrl }: { serverUrl: string }) {
+  const url = serverUrl || DEFAULT_URL;
+
   if (Platform.OS === 'web') {
     return (
       <iframe
-        src={ASSISTANT_URL}
+        src={url}
         style={{
           flex: 1,
           width: '100%',
@@ -167,7 +169,7 @@ function WebContent() {
       )}
       <WebView
         ref={webViewRef}
-        source={{ uri: ASSISTANT_URL }}
+        source={{ uri: url }}
         style={{ flex: 1 }}
         javaScriptEnabled
         domStorageEnabled
@@ -197,13 +199,18 @@ function WebContent() {
 export default function AssistantScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { biometricsEnabled, language } = useSettings();
+  const { biometricsEnabled, language, serverUrl } = useSettings();
   const tr = t[language];
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [webViewKey, setWebViewKey] = useState(0);
+
+  const handleReload = useCallback(() => {
+    setWebViewKey(k => k + 1);
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -299,7 +306,7 @@ export default function AssistantScreen() {
             <Text style={[styles.settingsLinkText, { color: colors.mutedForeground }]}>{tr.settings}</Text>
           </TouchableOpacity>
         </View>
-        <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} onReload={handleReload} />
       </View>
     );
   }
@@ -353,9 +360,9 @@ export default function AssistantScreen() {
         <View style={{ width: 38 }} />
       </View>
 
-      <WebContent />
+      <WebContent key={webViewKey} serverUrl={serverUrl} />
 
-      <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} onReload={handleReload} />
     </View>
   );
 }
