@@ -122,14 +122,24 @@ function handleBridgeMessage(webViewRef: React.MutableRefObject<unknown>, raw: s
   } catch (_) {}
 }
 
-function WebContent() {
+function WebContent({ language }: { language: 'ar' | 'en' }) {
+  const tr = t[language];
   if (Platform.OS === 'web') {
     return (
-      <iframe
-        src={ASSISTANT_URL}
-        style={{ flex: 1, width: '100%', height: '100%', border: 'none' } as React.CSSProperties}
-        title="Assistant"
-      />
+      <View style={webStyles.webContainer}>
+        <View style={webStyles.webCard}>
+          <Text style={webStyles.webIcon}>🌐</Text>
+          <Text style={webStyles.webNotice}>{tr.webNotice}</Text>
+          <a
+            href={ASSISTANT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={webStyles.webLink as React.CSSProperties}
+          >
+            {tr.openInBrowser}
+          </a>
+        </View>
+      </View>
     );
   }
 
@@ -346,7 +356,7 @@ export default function AssistantScreen() {
         <View style={{ width: 38 }} />
       </View>
 
-      <WebContent />
+      <WebContent language={language} />
 
       <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </View>
@@ -403,3 +413,47 @@ const styles = StyleSheet.create({
   appHeaderTitle: { flex: 1, color: '#ffffff', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   loadingOverlay: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a1628', zIndex: 10 },
 });
+
+const webStyles = {
+  webContainer: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: '#0a1628',
+    padding: 24,
+  },
+  webCard: {
+    backgroundColor: '#112240',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center' as const,
+    maxWidth: 360,
+    width: '100%' as const,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: '#1e3a5f',
+  },
+  webIcon: {
+    fontSize: 48,
+  },
+  webNotice: {
+    color: '#94a3b8',
+    fontSize: 15,
+    textAlign: 'center' as const,
+    lineHeight: 24,
+    fontFamily: 'Inter_400Regular',
+  },
+  webLink: {
+    display: 'block',
+    marginTop: 8,
+    backgroundColor: '#d4a843',
+    color: '#0a1628',
+    padding: '14px 28px',
+    borderRadius: 12,
+    fontWeight: 'bold',
+    fontSize: 15,
+    textDecoration: 'none',
+    textAlign: 'center' as const,
+    fontFamily: 'Inter_700Bold',
+  },
+};
