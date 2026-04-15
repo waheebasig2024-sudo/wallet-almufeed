@@ -19,8 +19,7 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "resourceClass": "large"
+        "gradleCommand": ":app:assembleRelease"
       },
       "env": {
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
@@ -32,8 +31,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "apk",
-        "resourceClass": "large"
+        "buildType": "apk"
       },
       "env": {
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
