@@ -49,4 +49,4 @@ EXPO_NO_TELEMETRY=1 npx expo start --web --port 5000 --localhost
 - التطبيق يعمل على المنفذ 5000 للويب
 
 ## URL الموقع
-`https://almufeed-net.infinityfreeapp.com/wallet/index.php`
+`http://127.0.0.1:8081`

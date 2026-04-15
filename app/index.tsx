@@ -20,7 +20,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import t from '@/constants/i18n';
 
-const ASSISTANT_URL = 'https://almufeed-net.infinityfreeapp.com/wallet/index.php';
+const ASSISTANT_URL = 'http://127.0.0.1:8081';
 
 function getAndroidPermissions(): string[] {
   if (Platform.OS !== 'android' || !PermissionsAndroid.PERMISSIONS) return [];
