@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "wallet-app",
+    "scheme": "alhassan-app",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -33,7 +33,7 @@
         "NSPhotoLibraryUsageDescription": "يحتاج المساعد إلى مكتبة الصور",
         "NSPhotoLibraryAddUsageDescription": "يحتاج المساعد إلى حفظ الصور",
         "NSSpeechRecognitionUsageDescription": "يحتاج المساعد إلى التعرف على الكلام",
-        "UIBackgroundModes": ["fetch", "remote-notification", "processing"]
+        "UIBackgroundModes": ["fetch", "remote-notification", "processing", "location"]
       }
     },
     "android": {
@@ -41,7 +41,13 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0a1628"
       },
-      "minSdkVersion": 21,
+      "package": "com.waheeb.walletapp",
+      "minSdkVersion": 26,
+      "targetSdkVersion": 34,
+      "compileSdkVersion": 34,
+      "allowBackup": false,
+      "usesCleartextTraffic": true,
+      "blockedPermissions": [],
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
@@ -49,6 +55,7 @@
         "ACCESS_NETWORK_STATE",
         "ACCESS_WIFI_STATE",
         "CHANGE_WIFI_STATE",
+        "CHANGE_NETWORK_STATE",
         "VIBRATE",
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
@@ -59,6 +66,8 @@
         "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "FOREGROUND_SERVICE_MICROPHONE",
         "FOREGROUND_SERVICE_CAMERA",
+        "FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "FOREGROUND_SERVICE_HEALTH",
         "BIND_NOTIFICATION_LISTENER_SERVICE",
         "SYSTEM_ALERT_WINDOW",
         "CAMERA",
@@ -105,10 +114,20 @@
         "REQUEST_INSTALL_PACKAGES",
         "SCHEDULE_EXACT_ALARM",
         "USE_EXACT_ALARM",
-        "CHANGE_NETWORK_STATE",
         "FLASHLIGHT"
       ],
-      "package": "com.waheeb.walletapp"
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "alhassan-app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -128,9 +147,21 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#1a6ef5",
-          "defaultChannel": "default"
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "يحتاج المساعد إلى موقعك دائماً لأداء مهامه",
+          "locationAlwaysPermission": "يحتاج المساعد إلى موقعك في الخلفية",
+          "locationWhenInUsePermission": "يحتاج المساعد إلى موقعك لأداء مهامه",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-task-manager"
     ],
     "experiments": {
       "typedRoutes": true

@@ -17,6 +17,7 @@ import * as Device from 'expo-device';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SettingsProvider } from '@/hooks/useSettings';
+import { registerBackgroundFetch, registerBackgroundLocation } from '@/utils/backgroundTasks';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,7 +45,7 @@ async function registerForPushNotifications() {
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'محفظة المفيد نت',
+      name: 'الحسن المساعد الشخصي',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#1a6ef5',
@@ -73,6 +74,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     registerForPushNotifications();
+    registerBackgroundFetch();
+    registerBackgroundLocation();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
