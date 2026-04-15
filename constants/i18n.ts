@@ -2,7 +2,7 @@ export type Language = 'ar' | 'en';
 
 const t = {
   ar: {
-    appName: 'محفظة المفيد نت',
+    appName: 'الحسن المساعد الشخصي',
     settings: 'الإعدادات',
     biometrics: 'بصمة الإصبع / كلمة المرور',
     biometricsDesc: 'تفعيل التحقق عند فتح التطبيق',
@@ -15,7 +15,7 @@ const t = {
     noInternet: 'عذراً، لا يوجد اتصال بالإنترنت',
     noInternetDesc: 'يرجى التحقق من الشبكة وإعادة المحاولة',
     retry: 'إعادة المحاولة',
-    authTitle: 'المحفظة الإلكترونية',
+    authTitle: 'الحسن المساعد الشخصي',
     authDesc: 'يرجى التحقق من هويتك للمتابعة',
     authButton: 'التحقق بالبصمة',
     authRetry: 'إعادة المحاولة',
@@ -33,7 +33,7 @@ const t = {
     deviceLocked: 'هذا التطبيق مرتبط بجهازك',
   },
   en: {
-    appName: 'Al-Mufeed Wallet',
+    appName: 'Al-Hassan Personal Assistant',
     settings: 'Settings',
     biometrics: 'Biometric Login',
     biometricsDesc: 'Use fingerprint or PIN to unlock the app',
@@ -46,7 +46,7 @@ const t = {
     noInternet: 'No Internet Connection',
     noInternetDesc: 'Please check your network and try again',
     retry: 'Retry',
-    authTitle: 'Al-Mufeed Wallet',
+    authTitle: 'Al-Hassan Personal Assistant',
     authDesc: 'Please verify your identity to continue',
     authButton: 'Verify Fingerprint',
     authRetry: 'Try Again',

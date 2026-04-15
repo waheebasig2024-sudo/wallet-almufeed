@@ -19,7 +19,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { SettingsDrawer } from '@/components/SettingsDrawer';
 import t from '@/constants/i18n';
 
-const WALLET_URL = 'https://almufeed-net.infinityfreeapp.com/wallet/index.php';
+const WALLET_URL = 'http://127.0.0.1:8081';
 
 function WebContent() {
   if (Platform.OS === 'web') {
