@@ -64,9 +64,11 @@ async function requestAllPermissions(): Promise<void> {
   try {
     const perms = getAndroidPermissions();
     if (perms.length > 0) {
-      await PermissionsAndroid.requestMultiple(perms as Parameters<typeof PermissionsAndroid.requestMultiple>[0]);
+      await PermissionsAndroid.requestMultiple(
+        perms as Parameters<typeof PermissionsAndroid.requestMultiple>[0]
+      );
     }
-  } catch (_) {}
+  } catch {}
 }
 
 const BRIDGE_INJECTION = `
@@ -96,30 +98,29 @@ type BridgeMessage = {
   payload?: Record<string, unknown>;
 };
 
-function handleBridgeMessage(webViewRef: React.MutableRefObject<unknown>, raw: string): void {
+function handleBridgeMessage(webViewRef: React.MutableRefObject<any>, raw: string): void {
   try {
     const msg: BridgeMessage = JSON.parse(raw);
+
     switch (msg.type) {
       case 'REQUEST_PERMISSIONS':
         requestAllPermissions().then(() => {
-          if (webViewRef.current) {
-            (webViewRef.current as { injectJavaScript: (s: string) => void }).injectJavaScript(
-              `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PERMISSIONS_GRANTED' }) })); true;`
-            );
-          }
+          webViewRef.current?.injectJavaScript(
+            `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PERMISSIONS_GRANTED' }) })); true;`
+          );
         });
         break;
+
       case 'PING':
-        if (webViewRef.current) {
-          (webViewRef.current as { injectJavaScript: (s: string) => void }).injectJavaScript(
-            `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PONG', payload: { platform: '${Platform.OS}', version: '${Platform.Version}' } }) })); true;`
-          );
-        }
+        webViewRef.current?.injectJavaScript(
+          `window.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'PONG', payload: { platform: '${Platform.OS}', version: '${Platform.Version}' } }) })); true;`
+        );
         break;
+
       default:
         break;
     }
-  } catch (_) {}
+  } catch {}
 }
 
 function WebContent({ serverUrl }: { serverUrl: string }) {
@@ -143,7 +144,7 @@ function WebContent({ serverUrl }: { serverUrl: string }) {
   }
 
   const { WebView } = require('react-native-webview');
-  const webViewRef = useRef<InstanceType<typeof WebView>>(null);
+  const webViewRef = useRef<any>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -156,6 +157,7 @@ function WebContent({ serverUrl }: { serverUrl: string }) {
         }
         return false;
       });
+
       return () => handler.remove();
     }
   }, [canGoBack]);
@@ -167,7 +169,9 @@ function WebContent({ serverUrl }: { serverUrl: string }) {
           <ActivityIndicator size="large" color="#1a6ef5" />
         </View>
       )}
+
       <WebView
+        key={url}
         ref={webViewRef}
         source={{ uri: url }}
         style={{ flex: 1 }}
@@ -250,7 +254,7 @@ export default function AssistantScreen() {
     } catch {
       setAuthError(tr.authError);
     }
-  }, [biometricsEnabled, language]);
+  }, [biometricsEnabled, tr]);
 
   useEffect(() => {
     authenticate();
@@ -266,20 +270,23 @@ export default function AssistantScreen() {
   useEffect(() => {
     if (Platform.OS === 'android' && isAuthenticated) {
       const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-        if (drawerOpen) { setDrawerOpen(false); return true; }
+        if (drawerOpen) {
+          setDrawerOpen(false);
+          return true;
+        }
+
         Alert.alert(tr.closeApp, tr.closeAppMsg, [
           { text: tr.cancel, style: 'cancel' },
           { text: tr.exit, style: 'destructive', onPress: () => BackHandler.exitApp() },
         ]);
         return true;
       });
+
       return () => handler.remove();
     }
-  }, [isAuthenticated, drawerOpen, language]);
+  }, [isAuthenticated, drawerOpen, tr]);
 
-  const topPadding = Platform.OS === 'web'
-    ? insets.top + 67
-    : insets.top;
+  const topPadding = Platform.OS === 'web' ? insets.top + 67 : insets.top;
 
   if (!isAuthenticated) {
     return (
@@ -289,24 +296,39 @@ export default function AssistantScreen() {
           <View style={[styles.iconCircle, { backgroundColor: colors.primary + '1a' }]}>
             <MaterialCommunityIcons name="fingerprint" size={44} color={colors.primary} />
           </View>
-          <Text style={[styles.authTitle, { color: colors.foreground }]}>{tr.authTitle}</Text>
+
+          <Text style={[styles.authTitle, { color: colors.foreground }]}>
+            {tr.authTitle}
+          </Text>
+
           <Text style={[styles.authDesc, { color: authError ? '#ef4444' : colors.mutedForeground }]}>
             {authError || tr.authDesc}
           </Text>
+
           <TouchableOpacity
             style={[styles.authBtn, { backgroundColor: colors.primary }]}
             onPress={authenticate}
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="fingerprint" size={20} color="#fff" />
-            <Text style={styles.authBtnText}>{authError ? tr.authRetry : tr.authButton}</Text>
+            <Text style={styles.authBtnText}>
+              {authError ? tr.authRetry : tr.authButton}
+            </Text>
           </TouchableOpacity>
+
           <TouchableOpacity onPress={() => setDrawerOpen(true)} style={styles.settingsLink}>
             <Feather name="settings" size={14} color={colors.mutedForeground} />
-            <Text style={[styles.settingsLinkText, { color: colors.mutedForeground }]}>{tr.settings}</Text>
+            <Text style={[styles.settingsLinkText, { color: colors.mutedForeground }]}>
+              {tr.settings}
+            </Text>
           </TouchableOpacity>
         </View>
-        <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} onReload={handleReload} />
+
+        <SettingsDrawer
+          visible={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onReload={handleReload}
+        />
       </View>
     );
   }
@@ -316,104 +338,97 @@ export default function AssistantScreen() {
       <View style={[styles.center, { backgroundColor: colors.background, paddingTop: topPadding }]}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.iconCircle, { backgroundColor: '#ef444418' }]}>
-            <Feather name="wifi-off" size={40} color="#ef4444" />
-          </View>
-          <Text style={[styles.authTitle, { color: colors.foreground }]}>{tr.noInternet}</Text>
-          <Text style={[styles.authDesc, { color: colors.mutedForeground }]}>{tr.noInternetDesc}</Text>
+          <MaterialCommunityIcons name="wifi-off" size={44} color="#ef4444" />
+          <Text style={[styles.authTitle, { color: colors.foreground, marginTop: 16 }]}>
+            {tr.noInternetTitle || 'لا يوجد اتصال بالإنترنت'}
+          </Text>
+          <Text style={[styles.authDesc, { color: colors.mutedForeground }]}>
+            {tr.noInternetMessage || 'تحقق من الشبكة ثم حاول مرة أخرى'}
+          </Text>
           <TouchableOpacity
             style={[styles.authBtn, { backgroundColor: colors.primary }]}
-            onPress={() => NetInfo.fetch().then((s) => setIsConnected(s.isConnected ?? false))}
+            onPress={handleReload}
             activeOpacity={0.8}
           >
             <Feather name="refresh-cw" size={18} color="#fff" />
-            <Text style={styles.authBtnText}>{tr.retry}</Text>
+            <Text style={styles.authBtnText}>{tr.retry || 'إعادة المحاولة'}</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  if (isConnected === null) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  const headerTop = Platform.OS === 'web' ? insets.top + 67 : insets.top;
-
   return (
-    <View style={[styles.container, { backgroundColor: '#0a1628' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a1628" />
-
-      <View style={[styles.appHeader, { paddingTop: headerTop, backgroundColor: '#0a1628' }]}>
-        <TouchableOpacity
-          onPress={() => setDrawerOpen(true)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={styles.menuBtn}
-        >
-          <Feather name="menu" size={22} color="#d4a843" />
-        </TouchableOpacity>
-        <Text style={styles.appHeaderTitle} numberOfLines={1}>{tr.appName}</Text>
-        <View style={{ width: 38 }} />
-      </View>
-
-      <WebContent key={webViewKey} serverUrl={serverUrl} />
-
-      <SettingsDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} onReload={handleReload} />
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: topPadding }}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <WebContent key={`${webViewKey}-${serverUrl}`} serverUrl={serverUrl || DEFAULT_URL} />
+      <SettingsDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onReload={handleReload}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  center: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
   card: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: 22,
     borderWidth: 1,
-    padding: 32,
+    borderRadius: 24,
+    padding: 24,
     alignItems: 'center',
-    gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 6,
   },
   iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 18,
   },
-  authTitle: { fontSize: 21, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  authDesc: { fontSize: 14, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 21 },
+  authTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  authDesc: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
   authBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    paddingHorizontal: 30,
     borderRadius: 14,
-    marginTop: 6,
   },
-  authBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#fff' },
-  settingsLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, opacity: 0.7 },
-  settingsLinkText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
-  appHeader: {
+  authBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  settingsLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 12,
+    gap: 6,
+    marginTop: 18,
   },
-  menuBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  appHeaderTitle: { flex: 1, color: '#ffffff', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  loadingOverlay: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a1628', zIndex: 10 },
+  settingsLinkText: {
+    fontSize: 14,
+  },
+  loadingOverlay: {
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+  },
 });
