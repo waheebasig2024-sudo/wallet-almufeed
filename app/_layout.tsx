@@ -17,7 +17,7 @@ import * as Device from 'expo-device';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SettingsProvider } from '@/hooks/useSettings';
-import { registerBackgroundFetch, registerBackgroundLocation } from '@/utils/backgroundTasks';
+// import { registerBackgroundFetch, registerBackgroundLocation } from '@/utils/backgroundTasks';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,13 +69,11 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     registerForPushNotifications();
-    registerBackgroundFetch();
-    registerBackgroundLocation();
 
     notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
     responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
